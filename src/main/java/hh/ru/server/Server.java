@@ -12,6 +12,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
@@ -25,16 +28,18 @@ public class Server implements Runnable {
 
     private ServerSocketChannel serverChannel;
 
+    private ThreadPoolExecutor p = new ThreadPoolExecutor(5, 50, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1));
+
     private Selector selector;
-    private Worker worker;
+//    private Worker worker;
 
     private ByteBuffer buf = ByteBuffer.allocate(1024);
 
-    public Server(InetAddress ip, int port, Worker worker) throws IOException {
+    public Server(InetAddress ip, int port) throws IOException {
         this.ip = ip;
         this.port = port;
         this.selector = initSelector();
-        this.worker = worker;
+//        this.worker = worker;
     }
 
     private Selector initSelector() throws IOException {
@@ -120,7 +125,8 @@ public class Server implements Runnable {
             return;
         }
 
-        worker.processData(this, ch, buf.array());
+        p.submit(new Worker(this, ch, buf.array()));
+//        worker.processData(this, ch, buf.array());
     }
 
     // A list of ChangeRequest instances
@@ -129,20 +135,20 @@ public class Server implements Runnable {
     // Maps a SocketChannel to a list of ByteBuffer instances
     private Map pendingData = new HashMap();
 
-    public void send(SocketChannel socket, HTTPResponse data) {
+    public void send(SocketChannel socket, HTTPResponse response) {
         synchronized (changeRequests) {
             // Indicate we want the interest ops set changed
             changeRequests.add(new ChangeRequest(socket, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
 
-            // And queue the data we want written
+            // And queue the response we want written
             synchronized (pendingData) {
                 List queue = (List) pendingData.get(socket);
                 if (queue == null) {
                     queue = new ArrayList();
                     pendingData.put(socket, queue);
                 }
-                queue.add(ByteBuffer.wrap(data.getHead().getBytes()));
-                queue.add(data.getBody());
+                queue.add(ByteBuffer.wrap(response.getHead().getBytes()));
+                queue.add(response.getBody());
             }
         }
 

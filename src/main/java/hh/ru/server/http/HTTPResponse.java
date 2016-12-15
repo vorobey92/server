@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
@@ -62,22 +63,22 @@ public class HTTPResponse {
             ch.read(target);
             target.flip();
             return target;
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             System.out.println(e.getMessage());
             //TODO 404 error
-            return null;
+            return ByteBuffer.wrap("404".getBytes());
         } catch (IOException e) {
             //TODO 500 error
             e.printStackTrace();
+            return ByteBuffer.wrap("500".getBytes());
         }
-        return null;//TODO think about it
     }
 
     private void setContentType(String location) {
         try {
             this.contentType = Files.probeContentType(Paths.get(location));
         } catch (IOException e) {
-            //TODO 500 error
+            //TODO can't determine content-type (use default)g
             e.printStackTrace();
         }
     }

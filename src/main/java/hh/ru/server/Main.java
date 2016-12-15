@@ -8,8 +8,8 @@ import java.io.IOException;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        Worker worker = new Worker();
-        new Thread(worker).start();
-        new Thread(new Server(null, 9090, worker)).start();
+//        Worker worker = new Worker();
+//        new Thread(worker).start();
+        new Thread(new Server(null, 8080)).start();
     }
 }
