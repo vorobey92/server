@@ -1,6 +1,6 @@
-package hh.ru.server;
+package ru.hh.server;
 
-import hh.ru.server.http.HTTPResponse;
+import ru.hh.server.http.HTTPResponse;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -11,6 +11,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -23,23 +25,32 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
  */
 public class Server implements Runnable {
 
+    //configs
     private InetAddress ip;
     private int port;
+    private Path rootDirectory;
+    private boolean cacheEnabled;
 
+    //other inner fields
+    private Cache cache;
     private ServerSocketChannel serverChannel;
-
-    private ThreadPoolExecutor p = new ThreadPoolExecutor(5, 50, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1));
-
+    private ThreadPoolExecutor p = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
+            Runtime.getRuntime().availableProcessors() * 2, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1));
     private Selector selector;
-//    private Worker worker;
-
     private ByteBuffer buf = ByteBuffer.allocate(1024);
 
-    public Server(InetAddress ip, int port) throws IOException {
+    public Server(Properties config) throws IOException {
+        this(InetAddress.getByName(config.getProperty("host")),
+                Integer.valueOf(config.getProperty("port")));
+        rootDirectory = Paths.get(config.getProperty("root_directory"));
+        cacheEnabled = Boolean.valueOf(config.getProperty("cache"));
+        cache = new Cache();
+    }
+
+    private Server(InetAddress ip, int port) throws IOException {
         this.ip = ip;
         this.port = port;
         this.selector = initSelector();
-//        this.worker = worker;
     }
 
     private Selector initSelector() throws IOException {
@@ -58,12 +69,9 @@ public class Server implements Runnable {
     public void run() {
         while (true) {
             try {
-                synchronized(changeRequests) {
-                    Iterator changes = changeRequests.iterator();
-                    while (changes.hasNext()) {
-                        ChangeRequest change = (ChangeRequest) changes.next();
-                        switch(change.type) {
-                            case ChangeRequest.CHANGEOPS:
+                synchronized (changeRequests) {
+                    for (ChangeRequest change : changeRequests) {
+                        if (change.type == ChangeRequest.CHANGEOPS) {
                                 SelectionKey key = change.socket.keyFor(selector);
                                 key.interestOps(change.ops);
                         }
@@ -126,14 +134,13 @@ public class Server implements Runnable {
         }
 
         p.submit(new Worker(this, ch, buf.array()));
-//        worker.processData(this, ch, buf.array());
     }
 
     // A list of ChangeRequest instances
-    private List changeRequests = new LinkedList();
+    private final List<ChangeRequest> changeRequests = new LinkedList<>();
 
     // Maps a SocketChannel to a list of ByteBuffer instances
-    private Map pendingData = new HashMap();
+    private final Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<>();
 
     public void send(SocketChannel socket, HTTPResponse response) {
         synchronized (changeRequests) {
@@ -142,9 +149,9 @@ public class Server implements Runnable {
 
             // And queue the response we want written
             synchronized (pendingData) {
-                List queue = (List) pendingData.get(socket);
+                List<ByteBuffer> queue = pendingData.get(socket);
                 if (queue == null) {
-                    queue = new ArrayList();
+                    queue = new ArrayList<>();
                     pendingData.put(socket, queue);
                 }
                 queue.add(ByteBuffer.wrap(response.getHead().getBytes()));
@@ -159,10 +166,11 @@ public class Server implements Runnable {
         SocketChannel socketChannel = (SocketChannel) key.channel();
 
         synchronized (pendingData) {
-            List queue = (List) pendingData.get(socketChannel);
+            List<ByteBuffer> queue = pendingData.get(socketChannel);
 
             while (!queue.isEmpty()) {
-                ByteBuffer buf = (ByteBuffer) queue.get(0);
+                ByteBuffer buf = queue.get(0);
+                buf.position(0);
                 socketChannel.write(buf);
                 if (buf.remaining() > 0) {
                     break;
@@ -175,5 +183,16 @@ public class Server implements Runnable {
             }
         }
     }
-}
 
+    public Cache getCache() {
+        return cache;
+    }
+
+    public Path getRootDirectory() {
+        return rootDirectory;
+    }
+
+    public boolean isCacheEnabled() {
+        return cacheEnabled;
+    }
+}

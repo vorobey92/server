@@ -1,13 +1,9 @@
-package hh.ru.server.http;
+package ru.hh.server.http;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -16,6 +12,15 @@ import java.util.*;
  */
 public class HTTPResponse {
 
+    private static Map<Integer, String> codeToReason = new HashMap<>();
+    static {
+        codeToReason.put(200, "OK");
+        codeToReason.put(400, "Bad Request");
+        codeToReason.put(404, "Not Found");
+        codeToReason.put(405, "Method Not Allowed");
+        codeToReason.put(500, "Internal Server Error");
+    }
+
     private HTTPResponse(){}
 
     private String version = "HTTP/1.1";
@@ -23,14 +28,42 @@ public class HTTPResponse {
     private String responseReason;
     private Map<String, String> headers = new LinkedHashMap<>();
     private String contentType;
+
     private ByteBuffer content;
 
     public static HTTPResponse responseTo(HTTPRequest request) {
         HTTPResponse response = new HTTPResponse();
         response.setContent(readFile(request.getLocation()));
         response.setContentType(request.getLocation());
+        response.setResponseCode(response.resolveResponseCode());
+        response.setResponseReason(codeToReason.get(response.getResponseCode()));
+        response.addDefaultHeaders();
+        return response;
+    }
+
+    public static HTTPResponse badRequest() {
+        HTTPResponse response = new HTTPResponse();
+        response.setResponseCode(400);
+        response.setResponseReason(codeToReason.get(400));
+        response.setContent(ByteBuffer.wrap("400 Method Not Allowed".getBytes()));
+        response.addDefaultHeaders();
+        return response;
+    }
+
+    public static HTTPResponse illegalMethodResponse() {
+        HTTPResponse response = new HTTPResponse();
+        response.setResponseCode(405);
+        response.setResponseReason(codeToReason.get(405));
+        response.setContent(ByteBuffer.wrap("405 Bad Request".getBytes()));
+        response.addDefaultHeaders();
+        return response;
+    }
+
+    public static HTTPResponse clearCacheResponse() {
+        HTTPResponse response = new HTTPResponse();
         response.setResponseCode(200);
-        response.setResponseReason("OK");
+        response.setResponseReason(codeToReason.get(200));
+        response.setContent(ByteBuffer.wrap("Cache cleared".getBytes()));
         response.addDefaultHeaders();
         return response;
     }
@@ -56,30 +89,28 @@ public class HTTPResponse {
         }
     }
 
-    private static ByteBuffer readFile(String location) {
-        try (FileChannel ch = FileChannel.open(Paths.get(location), StandardOpenOption.READ)) {
+    private static ByteBuffer readFile(Path location) {
+        try (FileChannel ch = FileChannel.open(location, StandardOpenOption.READ)) {
             int size = (int) ch.size();
             ByteBuffer target = ByteBuffer.allocate(size);
             ch.read(target);
             target.flip();
             return target;
         } catch (NoSuchFileException e) {
-            System.out.println(e.getMessage());
-            //TODO 404 error
+            System.err.println(e.getMessage());
             return ByteBuffer.wrap("404".getBytes());
         } catch (IOException e) {
-            //TODO 500 error
-            e.printStackTrace();
+            System.err.println(e.getMessage());
             return ByteBuffer.wrap("500".getBytes());
         }
     }
 
-    private void setContentType(String location) {
+    private void setContentType(Path location) {
         try {
-            this.contentType = Files.probeContentType(Paths.get(location));
+            this.contentType = Files.probeContentType(location);
         } catch (IOException e) {
-            //TODO can't determine content-type (use default)g
-            e.printStackTrace();
+            System.err.println("Can't deremine content type. " + e.getMessage());
+            this.contentType = "text/html";
         }
     }
 
@@ -89,6 +120,18 @@ public class HTTPResponse {
             headersStr += entry.getKey() + ": " + entry.getValue() + "\r\n";
         }
         return headersStr;
+    }
+
+    private int resolveResponseCode() {
+        String actualContent = new String(content.array());
+        switch (actualContent) {
+            case "404":
+                return 404;
+            case "500":
+                return 500;
+            default:
+                return 200;
+        }
     }
 
     private int getResponseCode() {

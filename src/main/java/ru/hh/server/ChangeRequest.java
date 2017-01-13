@@ -1,4 +1,4 @@
-package hh.ru.server;
+package ru.hh.server;
 
 import java.nio.channels.SocketChannel;
 
