@@ -25,8 +25,9 @@ public class HTTPRequest {
     private static final List<String> validVersions = Arrays.asList("HTTP/1.1", "HTTP/1.0", "HTTP/2.0");
 
     public HTTPRequest(byte[] bytes, Server server) throws RequestParseException {
-        parse(new String(bytes));
         this.server = server;
+
+        parse(new String(bytes));
     }
 
     private void parse(String request) throws RequestParseException {

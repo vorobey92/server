@@ -50,7 +50,7 @@ public class Server implements Runnable {
         try {
             cache = new Cache(rootDirectory);
             cache.start();
-        }catch (AccessDeniedException e) {
+        } catch (AccessDeniedException e) {
             System.err.println("SERVER: Access denied to root directory, cache disabled. " + e);
             cacheEnabled = false;
         }
@@ -81,8 +81,12 @@ public class Server implements Runnable {
                 synchronized (changeRequests) {
                     for (ChangeRequest change : changeRequests) {
                         if (change.type == ChangeRequest.CHANGEOPS) {
-                                SelectionKey key = change.socket.keyFor(selector);
-                                key.interestOps(change.ops);
+                            SelectionKey key = change.socket.keyFor(selector);
+                            if (key == null) {
+                                changeRequests.remove(change);
+                                break;
+                            }
+                            key.interestOps(change.ops);
                         }
                     }
                     changeRequests.clear();
@@ -108,7 +112,8 @@ public class Server implements Runnable {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("SERVER: " + e);
+//                System.err.println("SERVER: " + e);
+                e.printStackTrace();
             }
         }
     }
@@ -177,7 +182,7 @@ public class Server implements Runnable {
                 buf.position(0);
                 try {
                     socketChannel.write(buf);
-                }catch (IOException e) {
+                } catch (IOException e) {
                     System.err.println("SERVER: Problems with connection. " + e);
                     socketChannel.close();
                     pendingData.remove(socketChannel);

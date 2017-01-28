@@ -46,6 +46,7 @@ public class HTTPResponse {
         response.setResponseCode(400);
         response.setResponseReason(codeToReason.get(400));
         response.setContent(ByteBuffer.wrap("400 Method Not Allowed".getBytes()));
+        response.setContentType("text/html");
         response.addDefaultHeaders();
         return response;
     }
@@ -99,20 +100,23 @@ public class HTTPResponse {
     private void setContentType(Path location) {
         if (location.toString().endsWith("js")) {
             contentType = "application/javascript";
-        } else {
+        } else if (Files.exists(location)) {
             try {
                 this.contentType = Files.probeContentType(location);
             } catch (IOException e) {
                 System.err.println("HTTP RESPONSE: Can't determine content type. " + e);
                 this.contentType = "text/html";
             }
-        }
-        if (contentType == null) {
+        } else if (contentType == null) {
             this.contentType = "text/html";
         }
         if (!contentType.contains("image")) {
             contentType += "; charset=utf-8";
         }
+    }
+
+    private void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
     private String getHeadersString() {

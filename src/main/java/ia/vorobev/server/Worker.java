@@ -32,7 +32,7 @@ public class Worker implements Runnable {
             return;
         }
         if (!request.getMethod().equals("GET")) {
-            System.err.println("WORKER: Not a GET request. This is " + request.getMethod() + " request" + System.lineSeparator());
+            System.err.println("WORKER: Not a GET request. This is " + request.getMethod() + " request." + System.lineSeparator());
             server.send(socket, HTTPResponse.illegalMethodResponse());
             return;
         }
