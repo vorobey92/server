@@ -47,6 +47,6 @@ public class Main {
         } catch (URISyntaxException e) {
             System.err.println("MAIN: Can't determine current directory. " + e + System.lineSeparator());
         }
-        config.setProperty("cache", "true");
+        config.setProperty("cache_enabled", "true");
     }
 }

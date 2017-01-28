@@ -12,6 +12,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -42,12 +43,17 @@ public class Server implements Runnable {
         this(InetAddress.getByName(config.getProperty("host")),
                 Integer.valueOf(config.getProperty("port")));
         rootDirectory = Paths.get(config.getProperty("root_directory"));
-        cacheEnabled = Boolean.valueOf(config.getProperty("cache"));
+        cacheEnabled = Boolean.valueOf(config.getProperty("cache_enabled"));
         if (!cacheEnabled) {
             return;
         }
-        cache = new Cache(rootDirectory);
-        cache.start();
+        try {
+            cache = new Cache(rootDirectory);
+            cache.start();
+        }catch (AccessDeniedException e) {
+            System.err.println("SERVER: Access denied to root directory, cache disabled. " + e);
+            cacheEnabled = false;
+        }
     }
 
     private Server(InetAddress ip, int port) throws IOException {
