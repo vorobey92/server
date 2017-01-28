@@ -2,9 +2,7 @@ package ia.vorobev.server;
 
 import java.nio.channels.SocketChannel;
 
-/**
- * Created by ia.vorobev on 14.12.2016.
- */
+
 public class ChangeRequest {
     public static final int REGISTER = 1;
     public static final int CHANGEOPS = 2;

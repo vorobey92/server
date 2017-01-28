@@ -7,9 +7,7 @@ import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
-/**
- * Created by ia.vorobev on 14.12.2016.
- */
+
 public class HTTPResponse {
 
     private static Map<Integer, String> codeToReason = new HashMap<>();
@@ -106,6 +104,9 @@ public class HTTPResponse {
                 System.err.println("Can't deremine content type. " + e.getMessage());
                 this.contentType = "text/html";
             }
+        }
+        if (contentType == null) {
+            this.contentType = "text/html";
         }
         if (!contentType.contains("image")) {
             contentType += "; charset=utf-8";

@@ -6,9 +6,7 @@ import ia.vorobev.server.http.RequestParseException;
 
 import java.nio.channels.SocketChannel;
 
-/**
- * Created by ia.vorobev on 13.12.2016.
- */
+
 public class Worker implements Runnable {
 
     private final Server server;
@@ -22,11 +20,12 @@ public class Worker implements Runnable {
     }
 
     public void run() {
-        System.out.println("WORKER: " + Thread.currentThread() + " started." + System.lineSeparator());
+        System.out.println("WORKER: " + Thread.currentThread() + " started.");
         HTTPRequest request;
         try {
             request = new HTTPRequest(data, server);
-            System.out.println("WORKER: " + Thread.currentThread() + " accepted request : " + System.lineSeparator() + request);
+            System.out.println("WORKER: " + Thread.currentThread() + " accepted request : " + System.lineSeparator()
+                    + request + System.lineSeparator());
         } catch (RequestParseException e) {
             System.err.println("WORKER: Bad request. " + e.getMessage() + System.lineSeparator());
             server.send(socket, HTTPResponse.badRequest());

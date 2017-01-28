@@ -21,9 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
-/**
- * Created by ia.vorobev on 13.12.2016.
- */
+
 public class Server implements Runnable {
 
     //configs
@@ -104,7 +102,7 @@ public class Server implements Runnable {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println("SERVER: " + e);
             }
         }
     }
@@ -176,7 +174,15 @@ public class Server implements Runnable {
             while (!queue.isEmpty()) {
                 ByteBuffer buf = queue.get(0);
                 buf.position(0);
-                socketChannel.write(buf);
+                try {
+                    socketChannel.write(buf);
+                }catch (IOException e) {
+                    System.err.println("SERVER: Problems with connection. " + e);
+                    socketChannel.close();
+                    pendingData.remove(socketChannel);
+                    queue = null;
+                    return;
+                }
                 if (buf.remaining() > 0) {
                     break;
                 }

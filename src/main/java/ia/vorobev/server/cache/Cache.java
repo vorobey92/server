@@ -14,9 +14,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
-/**
- * Created by ia.vorobev on 13.01.2017.
- */
+
 public class Cache implements Runnable {
 
     private final Thread t;

@@ -3,13 +3,13 @@ package ia.vorobev.server.http;
 import ia.vorobev.server.Server;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-/**
- * Created by ia.vorobev on 14.12.2016.
- */
+
 public class HTTPRequest {
 
     private Server server;
@@ -33,7 +33,11 @@ public class HTTPRequest {
         StringTokenizer tokenizer = new StringTokenizer(request);
         method = tokenizer.nextToken().toUpperCase();
         validateFieldByAvailableValues(method, availableMethods);
-        location = tokenizer.nextToken();
+        try {
+            location = URLDecoder.decode(tokenizer.nextToken(),"UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            System.err.println("HTTP PARSER: Can't decode location." + e);
+        }
 
         version = tokenizer.nextToken();
         validateFieldByAvailableValues(version, validVersions);
@@ -60,8 +64,7 @@ public class HTTPRequest {
     public String toString() {
         return "HTTPRequest{\r\n" +
                 method + " " + location + " " + version + "\r\n" +
-                headers + "\r\n" +
-                '}';
+                headers + '}';
     }
 
     private void validateFieldByAvailableValues(String field, List<String> availableValues) {

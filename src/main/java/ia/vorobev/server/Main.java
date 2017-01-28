@@ -4,12 +4,8 @@ import java.io.*;
 import java.net.URISyntaxException;
 import java.util.Properties;
 
-/**
- * Created by ia.vorobev on 13.12.2016.
- */
-public class Main {
 
-    private static Server server;
+public class Main {
 
     /**
      * Starts server at localhost:8080 by default.
@@ -27,8 +23,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         System.out.println("MAIN: Starting server");
         Properties config = loadProperties();
-        server = new Server(config);
-        new Thread(server).start();
+        new Thread(new Server(config)).start();
     }
 
     private static Properties loadProperties() throws IOException {
@@ -39,7 +34,7 @@ public class Main {
             System.err.println("MAIN: Config file not found. Load default props");
             loadDefault(config);
         }
-        System.out.println("MAIN: properties loaded = " + config);
+        System.out.println("MAIN: properties loaded = " + config + System.lineSeparator());
         return config;
     }
 
