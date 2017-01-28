@@ -43,9 +43,9 @@ public class Main {
         config.setProperty("port", "8080");
         try {
             config.setProperty("root_directory",
-                    new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).toString());
+                    new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().toString());
         } catch (URISyntaxException e) {
-            System.err.println("MAIN: Can't determine current directory. " + e.getMessage() + System.lineSeparator());
+            System.err.println("MAIN: Can't determine current directory. " + e + System.lineSeparator());
         }
         config.setProperty("cache", "true");
     }

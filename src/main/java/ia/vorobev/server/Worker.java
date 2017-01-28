@@ -27,7 +27,7 @@ public class Worker implements Runnable {
             System.out.println("WORKER: " + Thread.currentThread() + " accepted request : " + System.lineSeparator()
                     + request + System.lineSeparator());
         } catch (RequestParseException e) {
-            System.err.println("WORKER: Bad request. " + e.getMessage() + System.lineSeparator());
+            System.err.println("WORKER: Bad request. " + e + System.lineSeparator());
             server.send(socket, HTTPResponse.badRequest());
             return;
         }
