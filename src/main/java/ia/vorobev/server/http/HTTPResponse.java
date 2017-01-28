@@ -11,6 +11,7 @@ import java.util.*;
 public class HTTPResponse {
 
     private static Map<Integer, String> codeToReason = new HashMap<>();
+
     static {
         codeToReason.put(200, "OK");
         codeToReason.put(400, "Bad Request");
@@ -19,7 +20,8 @@ public class HTTPResponse {
         codeToReason.put(500, "Internal Server Error");
     }
 
-    private HTTPResponse(){}
+    private HTTPResponse() {
+    }
 
     private String version = "HTTP/1.1";
     private int responseCode;
@@ -86,10 +88,10 @@ public class HTTPResponse {
             target.flip();
             return target;
         } catch (NoSuchFileException e) {
-            System.err.println(e.getMessage());
+            System.err.println("HTTP RESPONSE: Can't find file '" + location + "'. " + e);
             return ByteBuffer.wrap("404".getBytes());
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            System.err.println("HTTP RESPONSE: Got some problems. " + e);
             return ByteBuffer.wrap("500".getBytes());
         }
     }
@@ -101,7 +103,7 @@ public class HTTPResponse {
             try {
                 this.contentType = Files.probeContentType(location);
             } catch (IOException e) {
-                System.err.println("Can't deremine content type. " + e.getMessage());
+                System.err.println("HTTP RESPONSE: Can't determine content type. " + e);
                 this.contentType = "text/html";
             }
         }

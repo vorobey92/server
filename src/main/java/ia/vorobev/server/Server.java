@@ -139,18 +139,13 @@ public class Server implements Runnable {
         p.submit(new Worker(this, ch, buf.array()));
     }
 
-    // A list of ChangeRequest instances
     private final List<ChangeRequest> changeRequests = new LinkedList<>();
-
-    // Maps a SocketChannel to a list of ByteBuffer instances
     private final Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<>();
 
     public void send(SocketChannel socket, HTTPResponse response) {
         synchronized (changeRequests) {
-            // Indicate we want the interest ops set changed
             changeRequests.add(new ChangeRequest(socket, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
 
-            // And queue the response we want written
             synchronized (pendingData) {
                 List<ByteBuffer> queue = pendingData.get(socket);
                 if (queue == null) {

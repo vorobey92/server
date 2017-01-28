@@ -45,35 +45,9 @@ public class Cache implements Runnable {
         return value;
     }
 
-    /**
-     * Register the given directory with the WatchService; This function will be called by FileVisitor
-     */
-    private void registerDirectory(Path dir) throws IOException {
-        WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-        keys.put(key, dir);
-    }
-
-    /**
-     * Register the given directory, and all its sub-directories, with the WatchService.
-     */
-    private void walkAndRegisterDirectories(final Path start) throws IOException {
-        // register directory and sub-directories
-        Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                registerDirectory(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
-    }
-
-    /**
-     * Process all events for keys queued to the watcher
-     */
     public void run() {
 
         for (; ; ) {
-            // wait for key to be signalled
             WatchKey key;
             try {
                 key = watcher.take();
@@ -91,22 +65,19 @@ public class Cache implements Runnable {
                 @SuppressWarnings("rawtypes")
                 WatchEvent.Kind kind = event.kind();
 
-                // Context for directory entry event is the file name of entry
                 @SuppressWarnings("unchecked")
                 Path name = ((WatchEvent<Path>) event).context();
                 Path child = dir.resolve(name);
 
-                // print out event
-                System.out.format("CACHE: %s: %s%n%n", event.kind().name(), child );
+                System.out.format("CACHE: %s: %s%n%n", event.kind().name(), child);
 
-                // if directory is created, and watching recursively, then register it and its sub-directories
                 if (kind == ENTRY_CREATE) {
                     try {
                         if (Files.isDirectory(child)) {
                             walkAndRegisterDirectories(child);
                         }
                     } catch (IOException x) {
-                        // do something useful
+                        System.err.println("CACHE: Can't register Path " + child + ". Error: " + x);
                     }
                 } else if (kind == ENTRY_MODIFY
                         || kind == ENTRY_DELETE) {
@@ -116,17 +87,30 @@ public class Cache implements Runnable {
                 }
             }
 
-            // reset key and remove from set if directory no longer accessible
             boolean valid = key.reset();
             if (!valid) {
                 keys.remove(key);
 
-                // all directories are inaccessible
                 if (keys.isEmpty()) {
                     break;
                 }
             }
         }
+    }
+
+    private void walkAndRegisterDirectories(final Path start) throws IOException {
+        Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                registerDirectory(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    private void registerDirectory(Path dir) throws IOException {
+        WatchKey key = dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        keys.put(key, dir);
     }
 
 }
