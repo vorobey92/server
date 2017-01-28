@@ -1,6 +1,7 @@
-package ru.hh.server;
+package ia.vorobev.server;
 
-import ru.hh.server.http.HTTPResponse;
+import ia.vorobev.server.cache.Cache;
+import ia.vorobev.server.http.HTTPResponse;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -44,7 +45,11 @@ public class Server implements Runnable {
                 Integer.valueOf(config.getProperty("port")));
         rootDirectory = Paths.get(config.getProperty("root_directory"));
         cacheEnabled = Boolean.valueOf(config.getProperty("cache"));
-        cache = new Cache();
+        if (!cacheEnabled) {
+            return;
+        }
+        cache = new Cache(rootDirectory);
+        cache.start();
     }
 
     private Server(InetAddress ip, int port) throws IOException {
@@ -195,4 +200,5 @@ public class Server implements Runnable {
     public boolean isCacheEnabled() {
         return cacheEnabled;
     }
+
 }

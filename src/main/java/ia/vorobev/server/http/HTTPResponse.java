@@ -1,4 +1,4 @@
-package ru.hh.server.http;
+package ia.vorobev.server.http;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -59,15 +59,6 @@ public class HTTPResponse {
         return response;
     }
 
-    public static HTTPResponse clearCacheResponse() {
-        HTTPResponse response = new HTTPResponse();
-        response.setResponseCode(200);
-        response.setResponseReason(codeToReason.get(200));
-        response.setContent(ByteBuffer.wrap("Cache cleared".getBytes()));
-        response.addDefaultHeaders();
-        return response;
-    }
-
     public String getHead() {
         String result = getVersion() + " " + getResponseCode() + " " + getResponseReason() + "\r\n";
         result += getHeadersString();
@@ -81,7 +72,7 @@ public class HTTPResponse {
 
     private void addDefaultHeaders() {
         headers.put("Date", LocalDateTime.now().toString());
-        headers.put("Server", "school.hh.ru");
+        headers.put("Server", "ia.vorobev.ru");
         headers.put("Connection", "Keep-Alive");
         if (content != null) {
             headers.put("Content-Length", Integer.toString(getBody().array().length));
@@ -106,11 +97,18 @@ public class HTTPResponse {
     }
 
     private void setContentType(Path location) {
-        try {
-            this.contentType = Files.probeContentType(location);
-        } catch (IOException e) {
-            System.err.println("Can't deremine content type. " + e.getMessage());
-            this.contentType = "text/html";
+        if (location.toString().endsWith("js")) {
+            contentType = "application/javascript";
+        } else {
+            try {
+                this.contentType = Files.probeContentType(location);
+            } catch (IOException e) {
+                System.err.println("Can't deremine content type. " + e.getMessage());
+                this.contentType = "text/html";
+            }
+        }
+        if (!contentType.contains("image")) {
+            contentType += "; charset=utf-8";
         }
     }
 

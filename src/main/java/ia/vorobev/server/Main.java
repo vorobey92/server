@@ -1,4 +1,4 @@
-package ru.hh.server;
+package ia.vorobev.server;
 
 import java.io.*;
 import java.net.URISyntaxException;
@@ -25,7 +25,7 @@ public class Main {
      *
      */
     public static void main(String[] args) throws IOException {
-        System.out.println("Starting server");
+        System.out.println("MAIN: Starting server");
         Properties config = loadProperties();
         server = new Server(config);
         new Thread(server).start();
@@ -36,10 +36,10 @@ public class Main {
         try (InputStream input = new FileInputStream("config.properties")) {
             config.load(input);
         } catch (FileNotFoundException e) {
-            System.err.println("Config file not found. Load default props");
+            System.err.println("MAIN: Config file not found. Load default props");
             loadDefault(config);
         }
-        System.out.println("properties loaded = " + config);
+        System.out.println("MAIN: properties loaded = " + config);
         return config;
     }
 
@@ -50,7 +50,7 @@ public class Main {
             config.setProperty("root_directory",
                     new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).toString());
         } catch (URISyntaxException e) {
-            System.err.println("Can't determine current directory. " + e.getMessage());
+            System.err.println("MAIN: Can't determine current directory. " + e.getMessage() + System.lineSeparator());
         }
         config.setProperty("cache", "true");
     }
