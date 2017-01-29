@@ -1,7 +1,9 @@
 package ia.vorobev.server;
 
-import java.io.*;
-import java.net.URISyntaxException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 
@@ -17,7 +19,6 @@ public class Main {
      * port=9090
      * cache_enabled=true
      * root_directory=content/
-     *
      */
     public static void main(String[] args) throws IOException {
         System.out.println("MAIN: Starting server");
@@ -40,12 +41,7 @@ public class Main {
     private static void loadDefault(Properties config) {
         config.setProperty("host", "localhost");
         config.setProperty("port", "8080");
-        try {
-            config.setProperty("root_directory",
-                    new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getParentFile().toString());
-        } catch (URISyntaxException e) {
-            System.err.println("MAIN: Can't determine current directory. " + e + System.lineSeparator());
-        }
+        config.setProperty("root_directory", ".");
         config.setProperty("cache_enabled", "true");
     }
 }
