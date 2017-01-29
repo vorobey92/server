@@ -107,7 +107,8 @@ public class HTTPResponse {
                 System.err.println("HTTP RESPONSE: Can't determine content type. " + e);
                 this.contentType = "text/html";
             }
-        } else if (contentType == null) {
+        }
+        if (contentType == null) {
             this.contentType = "text/html";
         }
         if (!contentType.contains("image")) {
