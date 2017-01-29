@@ -13,6 +13,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -42,7 +43,13 @@ public class Server implements Runnable {
     public Server(Properties config) throws IOException {
         this(InetAddress.getByName(config.getProperty("host")),
                 Integer.valueOf(config.getProperty("port")));
+
         rootDirectory = Paths.get(config.getProperty("root_directory"));
+        if (!Files.exists(rootDirectory)) {
+            System.err.println("SERVER: " + rootDirectory + " doesn't exists. Current directory chosen to be a root.");
+            rootDirectory = Paths.get(".");
+        }
+
         cacheEnabled = Boolean.valueOf(config.getProperty("cache_enabled"));
         if (!cacheEnabled) {
             return;
