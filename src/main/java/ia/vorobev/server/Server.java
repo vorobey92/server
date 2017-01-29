@@ -37,7 +37,7 @@ public class Server implements Runnable {
     private ThreadPoolExecutor p = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
             Runtime.getRuntime().availableProcessors() * 2, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1));
     private Selector selector;
-    private ByteBuffer buf = ByteBuffer.allocate(1024);
+    private ByteBuffer buf = ByteBuffer.allocate(8192);
 
     public Server(Properties config) throws IOException {
         this(InetAddress.getByName(config.getProperty("host")),
@@ -82,10 +82,6 @@ public class Server implements Runnable {
                     for (ChangeRequest change : changeRequests) {
                         if (change.type == ChangeRequest.CHANGEOPS) {
                             SelectionKey key = change.socket.keyFor(selector);
-                            if (key == null) {
-                                changeRequests.remove(change);
-                                break;
-                            }
                             key.interestOps(change.ops);
                         }
                     }
@@ -112,8 +108,7 @@ public class Server implements Runnable {
                     }
                 }
             } catch (Exception e) {
-//                System.err.println("SERVER: " + e);
-                e.printStackTrace();
+                System.err.println("SERVER: " + e);
             }
         }
     }
@@ -132,25 +127,26 @@ public class Server implements Runnable {
 
         buf.clear();
 
-        int bytesReaded;
+        int bytesRead;
         try {
-            bytesReaded = ch.read(buf);
+            bytesRead = ch.read(buf);
         } catch (IOException e) {
+            System.err.println("SERVER: Read exception. " + e);
             key.cancel();
             ch.close();
             return;
         }
 
-        if (bytesReaded == -1) {
+        if (bytesRead == -1) {
             key.channel().close();
             key.cancel();
             return;
         }
 
-        p.submit(new Worker(this, ch, buf.array()));
+        p.submit(new Worker(this, ch, buf.array(), bytesRead));
     }
 
-    private final List<ChangeRequest> changeRequests = new LinkedList<>();
+    private final List<ChangeRequest> changeRequests = new ArrayList<>();
     private final Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<>();
 
     public void send(SocketChannel socket, HTTPResponse response) {
@@ -185,8 +181,6 @@ public class Server implements Runnable {
                 } catch (IOException e) {
                     System.err.println("SERVER: Problems with connection. " + e);
                     socketChannel.close();
-                    pendingData.remove(socketChannel);
-                    queue = null;
                     return;
                 }
                 if (buf.remaining() > 0) {

@@ -13,10 +13,11 @@ public class Worker implements Runnable {
     private final SocketChannel socket;
     private final byte[] data;
 
-    public Worker(Server server, SocketChannel socket, byte[] data) {
+    public Worker(Server server, SocketChannel socket, byte[] data, int bytesRead) {
         this.server = server;
         this.socket = socket;
-        this.data = data;
+        this.data = new byte[bytesRead];
+        System.arraycopy(data, 0, this.data, 0, bytesRead);
     }
 
     public void run() {
@@ -25,7 +26,7 @@ public class Worker implements Runnable {
         try {
             request = new HTTPRequest(data, server);
             System.out.println("WORKER: " + Thread.currentThread() + " accepted request : " + System.lineSeparator()
-                    + request + System.lineSeparator());
+                    + request);
         } catch (RequestParseException e) {
             System.err.println("WORKER: Bad request. " + e + System.lineSeparator());
             server.send(socket, HTTPResponse.badRequest());

@@ -22,7 +22,7 @@ public class HTTPRequest {
     private static final List<String> availableMethods = Arrays.asList("GET", "PUT", "POST", "DELETE", "PATCH",
             "HEAD", "CONNECT", "OPTIONS", "TRACE");
 
-    private static final List<String> validVersions = Arrays.asList("HTTP/1.1", "HTTP/1.0", "HTTP/2.0");
+    private static final List<String> validVersions = Arrays.asList("HTTP/1.1"); // you can add another versions if needed
 
     public HTTPRequest(byte[] bytes, Server server) throws RequestParseException {
         this.server = server;
@@ -38,6 +38,7 @@ public class HTTPRequest {
             location = URLDecoder.decode(tokenizer.nextToken(),"UTF-8");
         } catch (UnsupportedEncodingException e) {
             System.err.println("HTTP PARSER: Can't decode location." + e);
+            throw new RequestParseException();
         }
 
         version = tokenizer.nextToken();
@@ -51,6 +52,10 @@ public class HTTPRequest {
                 headers.put(keyVal[0], keyVal[1]);
             }
         }
+        if (!headers.containsKey("Host")) {
+            System.err.println("HTTP PARSER: request doesn't contains Host header.");
+            throw new RequestParseException();
+        }
     }
 
     public String getMethod() {
@@ -63,8 +68,8 @@ public class HTTPRequest {
 
     @Override
     public String toString() {
-        return "HTTPRequest{\r\n" +
-                method + " " + location + " " + version + "\r\n" +
+        return "HTTPRequest{" + System.lineSeparator() +
+                method + " " + location + " " + version + System.lineSeparator() +
                 headers + '}';
     }
 

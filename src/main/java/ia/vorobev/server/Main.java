@@ -9,14 +9,13 @@ public class Main {
 
     /**
      * Starts server at localhost:8080 by default.
-     * You can configure server by config.properties (place near *.jar file)
-     * <p>
-     * You can clear caches if you call http://host:port/evict
+     * Server accepts only GET requests of HTTP/1.1 version
+     * You can configure server by config.properties (place near executable *.jar file)
      * <p>
      * Example of config.properties :
      * host=localhost
      * port=9090
-     * cache=true
+     * cache_enabled=true
      * root_directory=content/
      *
      */
@@ -31,7 +30,7 @@ public class Main {
         try (InputStream input = new FileInputStream("config.properties")) {
             config.load(input);
         } catch (FileNotFoundException e) {
-            System.err.println("MAIN: Config file not found. Load default props");
+            System.err.println("MAIN: Config file not found. Load default props. Original exception: " + e);
             loadDefault(config);
         }
         System.out.println("MAIN: properties loaded = " + config + System.lineSeparator());
