@@ -89,7 +89,9 @@ public class Server implements Runnable {
                     for (ChangeRequest change : changeRequests) {
                         if (change.type == ChangeRequest.CHANGEOPS) {
                             SelectionKey key = change.socket.keyFor(selector);
-                            key.interestOps(change.ops);
+                            if (key != null && key.isValid()) {
+                                key.interestOps(change.ops);
+                            }
                         }
                     }
                     changeRequests.clear();
@@ -187,6 +189,7 @@ public class Server implements Runnable {
                     socketChannel.write(buf);
                 } catch (IOException e) {
                     System.err.println("SERVER: Problems with connection. " + e);
+                    pendingData.remove(socketChannel);
                     socketChannel.close();
                     return;
                 }
